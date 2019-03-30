@@ -2,6 +2,8 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
+const session = require('express-session');
+
 
 const db = require('./data/dbConfig.js');
 const Users = require('./users/users-model.js');
@@ -9,32 +11,50 @@ const Users = require('./users/users-model.js');
 
 const server = express();
 
+const sessionOptions = {
+  name: 'lambdaschool',
+  secret: 'keep it safe it keep hidden',
+  cookie: { 
+    maxAge: 1000* 60 * 60 * 24 * 2,
+    secure: false
+  },
+  httpOnly: true,
+  resave: false,
+  saveUninitialized: false
+}
+
+
+server.use(session(sessionOptions))
 server.use(helmet());
 server.use(express.json());
 server.use(cors());
 
 
 function restricted(req, res, next) {
+  // const { username, password } = req.headers;
+  // if (username && password) {
+  //   Users.findBy({ username })
+  //   .first()
+  //   .then(user => {
+  //     if( user && bcrypt.compareSync(password, user.password)) {
+  //       next();
+  //     }
+  //     else {
+  //       res.status(401).json({ message: 'Invalid Credentials' })
+  //     }
+  //   })
+  //   .catch(error => {
+  //     res.status(500).json(error);
+  //   })
+  // }
+  // else {
+  //   res.status(401).json({ message: 'Missing Credentials' })
+  // }
 
-  const { username, password } = req.headers;
-
-  if (username && password) {
-    Users.findBy({ username })
-    .first()
-    .then(user => {
-      if( user && bcrypt.compareSync(password, user.password)) {
-        next();
-      }
-      else {
-        res.status(401).json({ message: 'Invalid Credentials' })
-      }
-    })
-    .catch(error => {
-      res.status(500).json(error);
-    })
-  }
-  else {
-    res.status(401).json({ message: 'Missing Credentials' })
+  if(req.session && req.session.user){
+    next();
+  } else {
+    res.status(401).json( {message: 'You shall not pass' })
   }
 }
 
@@ -70,6 +90,7 @@ server.post('/api/login', (req, res) => {
   .first()
   .then(user => {
     if(user && bcrypt.compareSync(password, user.password)){
+      req.session.user = user;
       res.status(200).json({ message: `Welcome ${user.username}!` })
     }
     else {
