@@ -104,6 +104,20 @@ server.post('/api/login', (req, res) => {
 })
 
 
+server.get('/api/logout', (req, res) => {
+  if(req.session) {
+    req.session.destroy( err => {
+      if(err) {
+        res.send('You can never leave');
+      } else {
+        res.send('bye bye')
+      }
+    });
+  } else {
+    res.end();
+  }
+})
+
 
 server.get('/api/users',restricted, (req, res) => {
 
